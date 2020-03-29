@@ -3,8 +3,10 @@
 """
 Created on Thu Feb 20 14:28:40 2020
 
-@author: david
+@author: David Ricardo Figueroa Blanco 
+@email:dr.figueroa10@uniandes.edu.co
 """
+
 import numpy as np  
 import sys, os
 import math 
@@ -50,10 +52,14 @@ os.system("mkdir Analysis")
 
 ## organize directories in order of CV (e.i [min_Cv...Max_Cv])
 directories.sort(key=lambda x: float(x[2:]))
-
+bins_num=60
+resolution =[]
 for j,i in enumerate(directories):
-    try:
+    #try:
         # CV data
+        if(j==len(directories)-1):
+            print("Final")
+            break
         CV_dat1 = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))
         CV_dat2 = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(directories[j+1],directories[j+1]))
         #histogram of CV1
@@ -71,10 +77,19 @@ for j,i in enumerate(directories):
         #Resolution definition (Chromatography definition)
         resultion_2_1 = 2*(middle_b-middle_a1)/((max_b-min_b)+(max_a1-min_a1))
         print("resolution {} between {} and {} \n".format (resultion_2_1,i,directories[j+1] ))
-        if(resultion_2_1> 0.85):
-            print("check values for CVs {} and {} \n".format(i,directories[j+1]))
-    except:
-        print("out")
+        resolution.append(resultion_2_1)
+        if(resultion_2_1> 1):
+            print("check values for CVs {} and {} \n".format(i,directories[j+1]),j)
+            #check if previous CV is nor overlaping 
+            if(resolution[-2]>1.0):
+                tochangeCV=directories[resolution.index(resolution[-1])]
+                print(directories[resolution.index(resolution[-1])])
+                K_text=os.popen('grep "K" {}/input_test |tail -1  '.format(tochangeCV)).read()
+                print(K_text)
+                ## FAILS !!! K_text is a strange strging ( change that !! maybe using the ks_txt file ?)
+                os.system("sed 's/{}/NEW/g' {}/input_test".format(K_text,tochangeCV))
+    #except:
+    #    print("out")
 
 ##################plots generation 
 # %%
@@ -83,63 +98,57 @@ plt.figure(figsize=(15,10))
 for i in directories:
     CV_data = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))
     plt.title(" Histogram of all CVs  ")
-    plt.hist(CV_data[:,1],bins=10,alpha=0.5)
+    plt.hist(CV_data[:,1],bins=10,alpha=0.5,label="{}".format(i))
     plt.axvline(np.mean(CV_data[:,1]),linestyle="--")
     plt.legend(loc=(1.05,0.15))
-plt.savefig("./Analysis/Full_histrograms.jpg")    
-plt.show()
+plt.savefig("./Analysis/Full_histrograms.jpg",bbox_inches="tight")    
+#plt.show()
 
 ## generate all Cvs vs frames 
 plt.figure(figsize=(10,10))
 for i in directories:
     CV_data = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))
     plt.title("Colvar {} vs time ".format(i))
-    plt.plot(CV_data[:,0],CV_data[:,1])
+    plt.plot(CV_data[:,0],CV_data[:,1],label="{}".format(i))
     plt.axhline(np.mean(CV_data[:,1]),linestyle="--")
     plt.legend(loc=(1.05,0.05))
-plt.savefig("./Analysis/all_Cvs_time.jpg")    
-plt.show()
+plt.savefig("./Analysis/all_Cvs_time.jpg",bbox_inches="tight")    
+#plt.show()
 
 ### generate every CV plot 
-
+'''
 for i in directories:
     plt.figure()
     CV_data = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))
-    plt.title("Colvar {} vs time ".format(i))
-    plt.plot(CV_data[:,0],CV_data[:,1])
-    plt.savefig("./Analysis/Colvar{}_vs_time ".format(i))
+    plt.title("r {} vs time ".format(i))
+    plt.plot(CV_data[:,0],CV_data[:,1],label="{}".format(i))
+    print("./Analysis/{}_vs_time.pdf ".format(i))
+    plt.savefig("./Analysis/Colvar{}_vs_time.pdf ".format(i))
     plt.figure()
-    plt.title("Colvar {} Histogram  ".format(i))
+    plt.title(" {} Histogram  ".format(i))
     plt.hist(CV_data[:,1],bins=50)
-    plt.savefig("./Analysis/Colvar{}_Histogram".format(i))
-
-    
+    plt.savefig("./Analysis/{}_Histogram.pdf".format(i))
+'''
+#%%
 ###### PMF analysis ###### 
 data_new = []
-os.system("mkdir W")
-for k,i in enumerate(directories):
+try:
+    os.system("mkdir W")
+except:
+    print("W directory already created !!! ")
+## create files w with Colvar to make the pmf analysis.
+for k,i in zip(range(len(directories)-1),directories):
     CV_data = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))[:,1]
     K_sinf = np.genfromtxt("./test_ks.txt")
-    with open("w{}".format(k),"+a") as wind_file:
+    with open("./W/w{}".format(k),"+a") as wind_file:
         for j in range(len(CV_data)):
             data_new.append((CV_data[j],K_sinf[k][0],K_sinf[k][1]))       
-            wind_file.write("{} {} {} \n".format(CV_data[j],K_sinf[k][0],K_sinf[k][1]))
+            wind_file.write("{:.6f} {:.6f} {:.6f} \n".format(CV_data[j],K_sinf[k][0],K_sinf[k][1]))
 
+os.system("mkdir pmf_test")
+#os.system("mv W pmf_test")
+os.system("cp job  pmf_test ")
+os.system("cp umbrella_integration.x pmf_test" )
 
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-
-
+print("Execute job inside pmf_test")
 

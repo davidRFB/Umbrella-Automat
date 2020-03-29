@@ -435,8 +435,19 @@ for i in np.linspace(CV_f,CV_i,Num_Wind):
 '''
                 )
         print("--- %s seconds writing  \n " % (time.time() - start_time))
-#files = os.listdir()               
-#for i in files:
-#    if (".sh" in i ):
-#        print(i)
+
+
+with open ('Report_SMD_to_US.txt',"w") as report:
+        report.write(''' This report contains information related with the Umbrella sampling calculation 
+        ### US_file.sh example can be found in any CV directory''')
+        report.writelines("Cv_i =   {} \n".format(CV_i))
+        report.writelines("Cv_f =   {} \n".format(CV_f))
+        report.writelines("Temp =   {} \n".format(Tem))
+        report.writelines("E_gs =   {} \n".format(E_ts_guess))
+        report.writelines("N_win =   {} \n".format(Num_Wind))
+        report.writelines("Wind_Dist= {} \n".format(dE_wind))
+        report.writelines("K = {} \n".format(K_Force))
+        report.writelines("K_2= {} \n".format(4/(beta*(dE_wind + 0.4*dE_wind)**2)))
+        
+
 
