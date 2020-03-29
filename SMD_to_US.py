@@ -21,6 +21,8 @@ print("######  should be excuted as $ python SMD_to_US.py [COLVAR-FILE] [.xyz tr
 
 ## read file from Colective variable from the Steered Molecular dynamic (SMD)
 Colvar_data_file = sys.argv[1]
+SMD_traj = sys.argv[2]
+topol_file = sys.argv[3]
 
 # create COVLAR and frames files 
 os.system("cat "+Colvar_data_file+" | awk '{ print $2}' > COLVAR.dat")
@@ -59,7 +61,7 @@ Num_Wind = math.ceil(2*C_ts/dE_wind)
 print(" ----- Reading and proccesing trayectory with mdtraj ------- \n\n")
 ## load the trayectory in mdtraj to extract frames
 start_time = time.time()
-traj = mdt.load_xyz("magl_new_steer-pos-1.xyz",top="./MAGL_ARA.prmtop")
+traj = mdt.load_xyz(SMD_traj,top=topol_file)
 print("--- %s seconds of processing time \n " % (time.time() - start_time))
 ## Script writing
 
