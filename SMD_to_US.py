@@ -5,37 +5,18 @@ Created on Wed Jan 29 18:13:23 2020
 
 @author: David Ricardo Figueroa Blanco dr.figueroa10@uniandes.edu.co
 """
-# %%
-
-# modules !!
-
-import numpy as np  
-import sys, os
-import math 
-import scipy.constants as const
-import mdtraj as mdt
-import time 
-import shutil
-from pathlib2 import Path
-import argparse
-
-
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Automatation of Umbrella Sampling Calculation')
-'''
-parser.add_argument('SMD_COLVAR', 
+
+parser.add_argument("-c",dest='SMD_COLVAR',  required=True,
                     help='Colective variable data <.metadyLog > ')
-parser.add_argument('traj_xyz', 
+parser.add_argument("-x",dest='traj_xyz', required=True ,
                     help='SMD trayectory from cp2k <.xyz > ')
-parser.add_argument('topology_file', 
+parser.add_argument("-p",dest='topology_file', required=True, 
                     help='topology file amber <.top .mrtop> ')
-'''
-parser.add_argument('-c' ,action='store', dest='SMD_COLVAR',
-                    help='Colective variable data <.metadyLog > ')
-parser.add_argument('-x' , action='store', dest='traj_xyz',
-                    help='SMD trayectory from cp2k <.xyz > ')
-parser.add_argument('-t' , action='store', dest='topology_file',
-                    help='topology file amber <.top .mrtop> ')
+parser.add_argument("-t",dest='template_cp2k', required=True, 
+                    help='cp2k input <Template US > ')
+
 
 args = parser.parse_args()
 
@@ -51,8 +32,7 @@ print("######  should be excuted as $ python SMD_to_US.py [COLVAR-FILE] [.xyz tr
 Colvar_data_file = args.SMD_COLVAR
 SMD_traj = args.traj_xyz
 topol_file = args.topology_file
-
-
+template = args.template_cp2k
 # create COVLAR and frames files 
 os.system("cat "+Colvar_data_file+" | awk '{ print $2}' > COLVAR.dat")
 os.system("cat "+Colvar_data_file+" | awk '{ print $1}' > frames.dat")
@@ -128,7 +108,7 @@ for i in np.linspace(CV_f,CV_i,Num_Wind):
         
     start_time = time.time()
     
-    shutil.copy('./Template_US',"{}/CV{:.3f}US.sh".format(new_direc_cv,i))
+    shutil.copy(template,"{}/CV{:.3f}US.sh".format(new_direc_cv,i))
     
     
     path = Path("{}/CV{:.3f}US.sh".format(new_direc_cv,i))
@@ -143,6 +123,8 @@ for i in np.linspace(CV_f,CV_i,Num_Wind):
 
 
 with open ('Report_SMD_to_US.txt',"w") as report:
+        report.write(time.ctime())
+        report.write("\n")
         report.write(''' This report contains information related with the Umbrella sampling calculation \n''')
         report.write("\n")
         report.writelines("Cv_i =   {} \n".format(CV_i))
@@ -156,3 +138,5 @@ with open ('Report_SMD_to_US.txt',"w") as report:
         report.write("QM Region \n")
 
 os.system("sed -n '/QM_KIND C/,/LINK/p' input_Umbrella | head -n -2 >> Report_SMD_to_US.txt ")
+
+
