@@ -12,34 +12,34 @@ import sys, os
 import math 
 import scipy.constants as const
 import matplotlib.pyplot as plt
+from pathlib2 import Path
+
 
 print("######  This script automatize the process of the umbrella sampling analysis  ###### \n ")
 print("###### from the SMD_to_US.py script. Generating histograms plots and corrected US   ###### \n")
 print("######           should be excuted as $ python Analysis.py                    ###### ")
 
 
+CV_i = float(os.popen("grep Cv_i Report_SMD_to_US.txt | awk ' {print $3}'").read())
+CV_f = float(os.popen("grep Cv_f Report_SMD_to_US.txt | awk ' {print $3}'").read())
 
-colvar = list(np.float_(open("COLVAR.dat").read().splitlines()))
-frames = list(np.float_(open("frames.dat").read().splitlines()))
-
-CV_i = colvar[-1]
-CV_f = colvar[0]
-
+E_ts_guess =  float(os.popen("grep E_gs Report_SMD_to_US.txt | awk ' {print $3}'").read())
+Tem= float(os.popen("grep Temp Report_SMD_to_US.txt | awk ' {print $3}'").read())
 #0,529177 used to convert bohr to amnstrong
 
 C_ts = (CV_i -CV_f)*0.5291773/2
 dE_tot = C_ts*2
-print("Values of E_ts_guess must be the same of the SMD_to_US execution \n")
-E_ts_guess = float(input("\n guess value for E_ts (Kj/mol) \n"))
 
 K_Force  = 6*5*E_ts_guess/(C_ts)**2
-Tem = float(input("\n Temperature Value  (K) \n"))
+
 beta = 1/((const.Boltzmann*const.Avogadro/4184)*(Tem))
-# %%
+
 # Window width by equation (18) in 
 # Kästner, J., & Thiel, W. (2006). Analysis of the statistical error in umbrella sampling simulations by umbrella integration.
 #  The Journal of Chemical Physics, 124(23), 234106. doi:10.1063/1.2206775 
 dE_wind= 2/math.sqrt(K_Force*beta)  
+
+Ks_data = np.genfromtxt("./pmf_data.txt")
 
 
 ## calculate the number of the windows for the umbrella sampling
@@ -78,16 +78,32 @@ for j,i in enumerate(directories):
         resultion_2_1 = 2*(middle_b-middle_a1)/((max_b-min_b)+(max_a1-min_a1))
         print("resolution {} between {} and {} \n".format (resultion_2_1,i,directories[j+1] ))
         resolution.append(resultion_2_1)
+        
+        with open ('Report_Analysis_US.txt',"a+") as report:
+            report.write("resolution {} between {} and {} \n".format (resultion_2_1,i,directories[j+1] ))
+            
         if(resultion_2_1> 1):
-            print("check values for CVs {} and {} \n".format(i,directories[j+1]),j)
+            with open ('Report_Analysis_US.txt',"a+") as report:
+                report.write("checking values for CVs {} and {} \n".format(i,directories[j+1]))
+            print("checking values for CVs {} and {} \n".format(i,directories[j+1]),j)
             #check if previous CV is nor overlaping 
             if(resolution[-2]>1.0):
                 tochangeCV=directories[resolution.index(resolution[-1])]
-                print(directories[resolution.index(resolution[-1])])
-                K_text=os.popen('grep "K" {}/input_test |tail -1  '.format(tochangeCV)).read()
-                print(K_text)
+                try:
+                    path = Path("{}/{}US.sh".format(i,i))
+                    text = path.read_text()
+                    text = text.replace("K  "+str(Ks_data[:,0][j]), "K  "+str(Ks_data[:,0][j]*0.5))
+                    text = text.replace("!   RESTART_FILE_NAME toedit_byresolution", "   RESTART_FILE_NAME {}-RESTART.wfn".format(i))
+                    text = text.replace("PROJECT  {}".format(i),"PROJECT  {}_2k".format(i))
+                    path.write_text(text)
+                    with open ('Report_Analysis_US.txt',"a+") as report:
+                         report.write("changin K of "+str(Ks_data[:,0][j])+" by "+str(Ks_data[:,0][j]*0.5)+"in {} \n".format(tochangeCV))
+                except:
+                    print("nofile")
+                #K_text=os.popen('grep "K" {}/input_test |tail -1  '.format(tochangeCV)).read()
+                #print(K_text)
                 ## FAILS !!! K_text is a strange strging ( change that !! maybe using the ks_txt file ?)
-                os.system("sed 's/{}/NEW/g' {}/input_test".format(K_text,tochangeCV))
+                #os.system("sed 's/{}/NEW/g' {}/input_test".format(K_text,tochangeCV))
     #except:
     #    print("out")
 
