@@ -8,6 +8,7 @@ Created on Wed Jan 29 18:13:23 2020
 # %%
 
 # modules !!
+
 import numpy as np  
 import sys, os
 import math 
@@ -16,15 +17,41 @@ import mdtraj as mdt
 import time 
 import shutil
 from pathlib2 import Path
+import argparse
+
+
+# Instantiate the parser
+parser = argparse.ArgumentParser(description='Automatation of Umbrella Sampling Calculation')
+'''
+parser.add_argument('SMD_COLVAR', 
+                    help='Colective variable data <.metadyLog > ')
+parser.add_argument('traj_xyz', 
+                    help='SMD trayectory from cp2k <.xyz > ')
+parser.add_argument('topology_file', 
+                    help='topology file amber <.top .mrtop> ')
+'''
+parser.add_argument('-c' ,action='store', dest='SMD_COLVAR',
+                    help='Colective variable data <.metadyLog > ')
+parser.add_argument('-x' , action='store', dest='traj_xyz',
+                    help='SMD trayectory from cp2k <.xyz > ')
+parser.add_argument('-t' , action='store', dest='topology_file',
+                    help='topology file amber <.top .mrtop> ')
+
+args = parser.parse_args()
+
+print(args.SMD_COLVAR)
+print(args.traj_xyz)
+print(args.topology_file)
 
 print("###### This script automatize the process of the umbrella sampling execution  ###### \n ")
 print("######  from a Steered Molecular Dynamic (SMD) previously performed in CP2K   ###### \n")
 print("######  should be excuted as $ python SMD_to_US.py [COLVAR-FILE] [.xyz trayectory]   ###### ")
 
 ## read file from Colective variable from the Steered Molecular dynamic (SMD)
-Colvar_data_file = sys.argv[1]
-SMD_traj = sys.argv[2]
-topol_file = sys.argv[3]
+Colvar_data_file = args.SMD_COLVAR
+SMD_traj = args.traj_xyz
+topol_file = args.topology_file
+
 
 # create COVLAR and frames files 
 os.system("cat "+Colvar_data_file+" | awk '{ print $2}' > COLVAR.dat")
