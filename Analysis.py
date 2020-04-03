@@ -11,7 +11,10 @@ import numpy as np
 import sys, os
 import math 
 import scipy.constants as const
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
 from pathlib2 import Path
 
 
@@ -19,12 +22,16 @@ print("######  This script automatize the process of the umbrella sampling analy
 print("###### from the SMD_to_US.py script. Generating histograms plots and corrected US   ###### \n")
 print("######           should be excuted as $ python Analysis.py                    ###### ")
 
+message = None
 
-CV_i = float(os.popen("grep Cv_i Report_SMD_to_US.txt | awk ' {print $3}'").read())
-CV_f = float(os.popen("grep Cv_f Report_SMD_to_US.txt | awk ' {print $3}'").read())
+try:
+    CV_i = float(os.popen("grep Cv_i Report_SMD_to_US.txt | awk ' {print $3}'").read())
+    CV_f = float(os.popen("grep Cv_f Report_SMD_to_US.txt | awk ' {print $3}'").read())
+    E_ts_guess =  float(os.popen("grep E_gs Report_SMD_to_US.txt | awk ' {print $3}'").read())
+    Tem= float(os.popen("grep Temp Report_SMD_to_US.txt | awk ' {print $3}'").read())
+except :
+    print("Report_SMD_to_US.txt not found \n ")
 
-E_ts_guess =  float(os.popen("grep E_gs Report_SMD_to_US.txt | awk ' {print $3}'").read())
-Tem= float(os.popen("grep Temp Report_SMD_to_US.txt | awk ' {print $3}'").read())
 #0,529177 used to convert bohr to amnstrong
 
 C_ts = (CV_i -CV_f)*0.5291773/2
@@ -100,12 +107,6 @@ for j,i in enumerate(directories):
                          report.write("changin K of "+str(Ks_data[:,0][j])+" by "+str(Ks_data[:,0][j]*0.5)+"in {} \n".format(tochangeCV))
                 except:
                     print("nofile")
-                #K_text=os.popen('grep "K" {}/input_test |tail -1  '.format(tochangeCV)).read()
-                #print(K_text)
-                ## FAILS !!! K_text is a strange strging ( change that !! maybe using the ks_txt file ?)
-                #os.system("sed 's/{}/NEW/g' {}/input_test".format(K_text,tochangeCV))
-    #except:
-    #    print("out")
 
 ##################plots generation 
 # %%
@@ -132,19 +133,19 @@ plt.savefig("./Analysis/all_Cvs_time.jpg",bbox_inches="tight")
 #plt.show()
 
 ### generate every CV plot 
-'''
+
 for i in directories:
     plt.figure()
     CV_data = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))
-    plt.title("r {} vs time ".format(i))
+    plt.title(" {} vs time ".format(i))
     plt.plot(CV_data[:,0],CV_data[:,1],label="{}".format(i))
-    print("./Analysis/{}_vs_time.pdf ".format(i))
-    plt.savefig("./Analysis/Colvar{}_vs_time.pdf ".format(i))
+    plt.savefig("./Analysis/{} vs time .png".format(i[:-1]))
+
     plt.figure()
     plt.title(" {} Histogram  ".format(i))
     plt.hist(CV_data[:,1],bins=50)
-    plt.savefig("./Analysis/{}_Histogram.pdf".format(i))
-'''
+    plt.savefig("./Analysis/{} histogram.png".format(i[:-1]))
+
 #%%
 ###### PMF analysis ###### 
 data_new = []
@@ -155,7 +156,7 @@ except:
 ## create files w with Colvar to make the pmf analysis.
 for k,i in zip(range(len(directories)-1),directories):
     CV_data = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))[:,1]
-    K_sinf = np.genfromtxt("./test_ks.txt")
+    K_sinf = np.genfromtxt("./pmf_data.txt")
     with open("./W/w{}".format(k),"+a") as wind_file:
         for j in range(len(CV_data)):
             data_new.append((CV_data[j],K_sinf[k][0],K_sinf[k][1]))       
@@ -168,3 +169,18 @@ os.system("cp umbrella_integration.x pmf_test" )
 
 print("Execute job inside pmf_test")
 
+#%%
+
+pmf_final = np.genfromtxt("./pmf_test/fe_ui.xy",skip_header=2)
+plt.figure()
+#converting to kcal/mol
+pmf_final_kcal = (pmf_final[:,1])*627.5
+plt.title("Energy Profile")
+plt.xlabel(" Reaction coordinate ")
+plt.ylabel(" Energy (kcal/mol) ")
+plt.plot(pmf_final[:,0],pmf_final_kcal,label=" $E_a = $ {:.4f}".format(max(pmf_final_kcal)))
+plt.legend(fontsize=16,loc="best")
+plt.savefig("pmf.pdf")
+plt.show()
+
+# %%
