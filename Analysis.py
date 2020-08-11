@@ -14,6 +14,7 @@ import scipy.constants as const
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import subprocess
 
 from pathlib2 import Path
 
@@ -56,10 +57,10 @@ Num_Wind = math.ceil(2*C_ts/dE_wind)
 directories=[d for d in os.listdir(os.getcwd()) if os.path.isdir(d) and "CV" in d ]
 cv_vals = []
 os.system("mkdir Analysis")
-
+#%%
 ## organize directories in order of CV (e.i [min_Cv...Max_Cv])
 directories.sort(key=lambda x: float(x[2:]))
-bins_num=60
+bins_num=10
 resolution =[]
 for j,i in enumerate(directories):
     #try:
@@ -89,12 +90,12 @@ for j,i in enumerate(directories):
         with open ('Report_Analysis_US.txt',"a+") as report:
             report.write("resolution {} between {} and {} \n".format (resultion_2_1,i,directories[j+1] ))
             
-        if(resultion_2_1> 1):
+        if(resultion_2_1> 0.85):
             with open ('Report_Analysis_US.txt',"a+") as report:
                 report.write("checking values for CVs {} and {} \n".format(i,directories[j+1]))
             print("checking values for CVs {} and {} \n".format(i,directories[j+1]),j)
             #check if previous CV is nor overlaping 
-            if(resolution[-2]>1.0):
+            if(resolution[-2]>0.85):
                 tochangeCV=directories[resolution.index(resolution[-1])]
                 try:
                     path = Path("{}/{}US.sh".format(i,i))
@@ -159,19 +160,32 @@ for k,i in zip(range(len(directories)-1),directories):
     K_sinf = np.genfromtxt("./pmf_data.txt")
     with open("./W/w{}".format(k),"+a") as wind_file:
         for j in range(len(CV_data)):
-            data_new.append((CV_data[j],K_sinf[k][0],K_sinf[k][1]))       
-            wind_file.write("{:.6f} {:.6f} {:.6f} \n".format(CV_data[j],K_sinf[k][0],K_sinf[k][1]))
+            temp_CV=float(i[2:])
+            index = np.argmin(np.abs(np.array(K_sinf[:,1])-temp_CV))
 
-os.system("mkdir pmf_test")
+            data_new.append((CV_data[j],K_sinf[index][0],K_sinf[index][1]))       
+            wind_file.write("{:.6f} {:.6f} {:.6f} \n".format(CV_data[j],K_sinf[index][0],K_sinf[index][1]))
+
+os.system("mkdir pmf")
 #os.system("mv W pmf_test")
-os.system("cp job  pmf_test ")
-os.system("cp umbrella_integration.x pmf_test" )
-
-print("Execute job inside pmf_test")
+os.system("echo ""./umbrella_integration.x -ui -d ../W -T 300 -min {} -max {} -n 200 -u au -ss 40 -daidxi -seg 10 -r -1 -v 3 > output""> job.sh".format(directories[0][2:],directories[-1][2:]))
+os.system("chmod +x job.sh")
+os.system("mv job.sh  pmf ")
+os.system("cp umbrella_integration.x pmf" )
+#os.system("cd pmf")
+subprocess.call(['sh','./job.sh'])
+print("Execute job.sh inside pmf")
+resp = input("all ready executed")
 
 #%%
+if( os.path.isdir('pmf/histogras') == True):
+    print("producing final PMF plot")
+else:
+    print("Execute job.sh inside pmf")
+    resp = input("all ready executed")
 
-pmf_final = np.genfromtxt("./pmf_test/fe_ui.xy",skip_header=2)
+    
+pmf_final = np.genfromtxt("./pmf/fe_ui.xy",skip_header=2)
 plt.figure()
 #converting to kcal/mol
 pmf_final_kcal = (pmf_final[:,1])*627.5
@@ -180,7 +194,7 @@ plt.xlabel(" Reaction coordinate ")
 plt.ylabel(" Energy (kcal/mol) ")
 plt.plot(pmf_final[:,0],pmf_final_kcal,label=" $E_a = $ {:.4f}".format(max(pmf_final_kcal)))
 plt.legend(fontsize=16,loc="best")
-plt.savefig("pmf.pdf")
+plt.savefig("pmf.jpg")
 plt.show()
 
 # %%
