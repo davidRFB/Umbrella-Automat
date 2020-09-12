@@ -26,9 +26,9 @@ print("######           should be excuted as $ python Analysis.py               
 message = None
 
 try:
-    CV_i = float(os.popen("grep Cv_i Report_SMD_to_US.txt | awk ' {print $3}'").read())
-    CV_f = float(os.popen("grep Cv_f Report_SMD_to_US.txt | awk ' {print $3}'").read())
-    E_ts_guess =  float(os.popen("grep E_gs Report_SMD_to_US.txt | awk ' {print $3}'").read())
+    CV_i = float(os.popen("grep Cv_i Report_SMD_to_US.txt | awk ' {print $4}'").read())
+    CV_f = float(os.popen("grep Cv_f Report_SMD_to_US.txt | awk ' {print $4}'").read())
+    E_ts_guess =  float(os.popen("grep E_ts Report_SMD_to_US.txt | awk ' {print $3}'").read())
     Tem= float(os.popen("grep Temp Report_SMD_to_US.txt | awk ' {print $3}'").read())
 except :
     print("Report_SMD_to_US.txt not found \n ")
@@ -56,7 +56,7 @@ Num_Wind = math.ceil(2*C_ts/dE_wind)
 ## iterate over directories 
 directories=[d for d in os.listdir(os.getcwd()) if os.path.isdir(d) and "CV" in d ]
 cv_vals = []
-os.system("mkdir Analysis")
+os.system("mkdir US_Analysis")
 #%%
 ## organize directories in order of CV (e.i [min_Cv...Max_Cv])
 directories.sort(key=lambda x: float(x[2:]))
@@ -119,7 +119,7 @@ for i in directories:
     plt.hist(CV_data[:,1],bins=10,alpha=0.5,label="{}".format(i))
     plt.axvline(np.mean(CV_data[:,1]),linestyle="--")
     plt.legend(loc=(1.05,0.15))
-plt.savefig("./Analysis/Full_histrograms.jpg",bbox_inches="tight")    
+plt.savefig("./US_Analysis/Full_histrograms.jpg",bbox_inches="tight")    
 #plt.show()
 
 ## generate all Cvs vs frames 
@@ -130,7 +130,7 @@ for i in directories:
     plt.plot(CV_data[:,0],CV_data[:,1],label="{}".format(i))
     plt.axhline(np.mean(CV_data[:,1]),linestyle="--")
     plt.legend(loc=(1.05,0.05))
-plt.savefig("./Analysis/all_Cvs_time.jpg",bbox_inches="tight")    
+plt.savefig("./US_Analysis/all_Cvs_time.jpg",bbox_inches="tight")    
 #plt.show()
 
 ### generate every CV plot 
@@ -140,12 +140,12 @@ for i in directories:
     CV_data = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))
     plt.title(" {} vs time ".format(i))
     plt.plot(CV_data[:,0],CV_data[:,1],label="{}".format(i))
-    plt.savefig("./Analysis/{} vs time .png".format(i[:-1]))
+    plt.savefig("./US_Analysis/{} vs time .png".format(i[:-1]))
 
     plt.figure()
     plt.title(" {} Histogram  ".format(i))
     plt.hist(CV_data[:,1],bins=50)
-    plt.savefig("./Analysis/{} histogram.png".format(i[:-1]))
+    plt.savefig("./US_Analysis/{} histogram.png".format(i[:-1]))
 
 #%%
 ###### PMF analysis ###### 
@@ -182,7 +182,7 @@ if( os.path.isdir('pmf/histogras') == True):
     print("producing final PMF plot")
 else:
     print("Execute job.sh inside pmf")
-    resp = input("all ready executed")
+    resp = input("If job.sh was already executed press Enter")
 
     
 pmf_final = np.genfromtxt("./pmf/fe_ui.xy",skip_header=2)

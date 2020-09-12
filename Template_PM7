@@ -1,0 +1,272 @@
+&FORCE_EVAL
+  METHOD QMMM
+
+  &DFT
+   CHARGE -1
+    &QS
+      METHOD PM6
+      &SE
+        ANALYTICAL_GRADIENTS T
+      &END SE
+    &END QS
+    &SCF
+      SCF_GUESS ATOMIC
+    &END SCF
+
+  &END DFT
+
+  &MM
+    &FORCEFIELD
+      &SPLINE
+       EMAX_SPLINE 10.0
+       RCUT_NB 10.
+      &END
+      parm_file_name ../topoledit
+      parmtype AMBER
+      VDW_SCALE14 0.5
+      EI_SCALE14  0.8333333
+    &END FORCEFIELD
+    &POISSON
+      &EWALD
+        EWALD_TYPE spme
+        ALPHA .24
+        GMAX 146  95  131
+        RCUT 10.
+        O_SPLINE 6
+      &END EWALD
+    &END POISSON
+  &END MM
+
+  &QMMM
+    USE_GEEP_LIB 10
+    &CELL
+      ABC 21. 21. 21.
+      PERIODIC NONE
+    &END CELL
+    &INTERPOLATOR
+      EPS_R 1.0e-14
+      EPS_X 1.0e-14
+      MAXITER 200
+    &END INTERPOLATOR
+
+
+    &QM_KIND C
+  MM_INDEX   3852 
+  MM_INDEX   3850
+  MM_INDEX   3856
+  MM_INDEX   3851
+  MM_INDEX   3847
+  MM_INDEX   3848
+  MM_INDEX   3849
+  MM_INDEX   3853
+  MM_INDEX   2535
+  MM_INDEX   2989
+  MM_INDEX   2992
+  MM_INDEX   2986
+  MM_INDEX   1908
+    &END QM_KIND
+    &QM_KIND N
+  MM_INDEX   2991
+  MM_INDEX   2987
+    &END QM_KIND
+    &QM_KIND O
+  MM_INDEX   1911
+  MM_INDEX   3854
+  MM_INDEX   3855
+  MM_INDEX   2536
+  MM_INDEX   2537
+    &END QM_KIND
+    &QM_KIND H
+  MM_INDEX   2990
+  MM_INDEX   2988
+  MM_INDEX   2993
+  MM_INDEX   1912
+  MM_INDEX   1910
+  MM_INDEX   1909
+  MM_INDEX   3930
+  MM_INDEX   3931
+  MM_INDEX   3929
+  MM_INDEX   3928
+  MM_INDEX   3932
+  MM_INDEX   3933
+    &END QM_KIND
+
+    &LINK
+      ALPHA 1.40
+      LINK_TYPE IMOMM
+      MM_INDEX 1906
+      QM_INDEX 1909
+      RADIUS 0.80
+    &END LINK
+    &LINK
+      ALPHA 1.40
+      LINK_TYPE IMOMM
+      MM_INDEX 2532
+      QM_INDEX 2535
+      RADIUS 0.80
+    &END LINK
+    &LINK
+      ALPHA 1.40
+      LINK_TYPE IMOMM
+      MM_INDEX 2983
+      QM_INDEX 2986
+      RADIUS 0.80
+    &END LINK
+    &LINK
+      ALPHA 1.40
+      LINK_TYPE IMOMM
+      MM_INDEX 3857
+      QM_INDEX 3856
+      RADIUS 0.80
+    &END LINK
+    &LINK
+      ALPHA 1.40
+      LINK_TYPE IMOMM
+      MM_INDEX 3845
+      QM_INDEX 3847
+      RADIUS 0.80
+    &END LINK
+
+  &END QMMM
+
+  &SUBSYS
+    &CELL
+      ABC 84.085   83.518  83.804
+      PERIODIC XYZ
+    &END CELL
+    &TOPOLOGY
+      CONN_FILE_NAME ../topoledit
+      CONNECTIVITY AMBER
+      COORD_FILE_NAME coordfiledit 
+      COORDINATE PDB
+      PARA_RES .FALSE.
+      &DUMP_PDB
+      &END
+    &END TOPOLOGY
+    &KIND NA+
+     ELEMENT Na
+    &END KIND
+    &KIND Cl-
+     ELEMENT Cl
+    &END KIND
+
+    &KIND C
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-BLYP-q4
+    &END KIND
+    &KIND N
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-BLYP-q5
+    &END KIND
+    &KIND O
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-BLYP-q6
+    &END KIND
+    &KIND H
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-BLYP-q1
+    &END KIND
+
+    &COLVAR
+      &DISTANCE_FUNCTION
+        ATOMS 3854 3852 3852 1911
+	COEFFICIENT -1.0
+      &END
+    &END 
+
+  &END SUBSYS
+&END FORCE_EVAL
+
+&GLOBAL
+  PRINT_LEVEL LOW
+  PROJECT nametoedit
+  RUN_TYPE MD
+  PREFERRED_FFT_LIBRARY FFTSG
+&END GLOBAL
+
+&MOTION
+
+  &MD
+   ENSEMBLE NVT
+   STEPS 9000
+   TIMESTEP 0.5
+   TEMPERATURE 300.0
+   &THERMOSTAT
+    TYPE CSVR
+     REGION DEFINED
+     &DEFINE_REGION
+       MM_SUBSYS ATOMIC
+     &END
+     &DEFINE_REGION
+       QM_SUBSYS ATOMIC
+     &END
+    &CSVR
+      TIMECON 50
+     &END
+    &END
+   &END MD
+
+  &PRINT
+   &TRAJECTORY
+    FORMAT XMOL
+    &EACH
+     MD 10
+    &END
+   &END TRAJECTORY
+   &RESTART
+    &EACH
+     MD 100
+    &END
+    ADD_LAST NUMERIC
+   &END RESTART
+   &FORCES OFF
+    &EACH
+     MD 100
+    &END
+    ADD_LAST NUMERIC
+   &END
+   &VELOCITIES OFF
+   &END
+  &END PRINT
+
+   &FREE_ENERGY
+     &METADYN
+       LANGEVIN  F
+       DO_HILLS  F
+       LAGRANGE  F
+       NT_HILLS  1
+       WW     0.
+       TEMPERATURE 1000
+       &METAVAR
+         SCALE   1.
+         COLVAR  1
+       &END METAVAR
+       &PRINT
+         &COLVAR
+           COMMON_ITERATION_LEVELS  3
+           &EACH
+             MD  10
+           &END EACH
+         &END COLVAR
+       &END PRINT
+     &END METADYN
+   &END FREE_ENERGY
+
+  &CONSTRAINT
+    &COLLECTIVE
+      COLVAR 1
+      INTERMOLECULAR
+      TARGET     cvvaltoedit 
+      &RESTRAINT
+        K 	constantktoedit
+      &END
+    &END COLLECTIVE
+  &END
+
+&END MOTION
+
+!&EXT_RESTART
+!  RESTART_FILE_NAME magl_ptos_steer-1.restart
+!  RESTART_THERMOSTAT .FALSE.
+&END
+
