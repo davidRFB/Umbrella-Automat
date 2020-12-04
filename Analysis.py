@@ -65,49 +65,49 @@ resolution =[]
 for j,i in enumerate(directories):
     #try:
         # CV data
-        if(j==len(directories)-1):
-            print("Final")
-            break
-        CV_dat1 = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))
-        CV_dat2 = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(directories[j+1],directories[j+1]))
-        #histogram of CV1
-        y_1,x_1 =np.histogram(CV_dat1[:,1],bins=bins_num)
-        #parameters of CV1 histogram
-        min_a1 = min(x_1)
-        max_a1 = max(x_1)
-        middle_a1 = x_1[round(len(x_1)/2)]
-        #histogram of CV2
-        y_2,x_2 =np.histogram(CV_dat2[:,1],bins=bins_num)
-        #parameters of CV2 histogram
-        min_b = min(x_2)
-        max_b = max(x_2)
-        middle_b = x_2[round(len(x_2)/2)]
-        #Resolution definition (Chromatography definition)
-        resultion_2_1 = 2*(middle_b-middle_a1)/((max_b-min_b)+(max_a1-min_a1))
-        print("resolution {} between {} and {} \n".format (resultion_2_1,i,directories[j+1] ))
-        resolution.append(resultion_2_1)
+    if(j==len(directories)-1):
+        print("Final")
+        break
+    CV_dat1 = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(i,i))
+    CV_dat2 = np.genfromtxt("{}/{}-COLVAR.metadynLog".format(directories[j+1],directories[j+1]))
+    #histogram of CV1
+    y_1,x_1 =np.histogram(CV_dat1[:,1],bins=bins_num)
+    #parameters of CV1 histogram
+    min_a1 = min(x_1)
+    max_a1 = max(x_1)
+    middle_a1 = x_1[round(len(x_1)/2)]
+    #histogram of CV2
+    y_2,x_2 =np.histogram(CV_dat2[:,1],bins=bins_num)
+    #parameters of CV2 histogram
+    min_b = min(x_2)
+    max_b = max(x_2)
+    middle_b = x_2[round(len(x_2)/2)]
+    #Resolution definition (Chromatography definition)
+    resultion_2_1 = 2*(middle_b-middle_a1)/((max_b-min_b)+(max_a1-min_a1))
+    print("resolution {} between {} and {} \n".format (resultion_2_1,i,directories[j+1] ))
+    resolution.append(resultion_2_1)
+
+    with open ('Report_Analysis_US.txt',"a+") as report:
+        report.write("resolution {} between {} and {} \n".format (resultion_2_1,i,directories[j+1] ))
         
+    if(resultion_2_1> 0.85):
         with open ('Report_Analysis_US.txt',"a+") as report:
-            report.write("resolution {} between {} and {} \n".format (resultion_2_1,i,directories[j+1] ))
-            
-        if(resultion_2_1> 0.85):
-            with open ('Report_Analysis_US.txt',"a+") as report:
-                report.write("checking values for CVs {} and {} \n".format(i,directories[j+1]))
-            print("checking values for CVs {} and {} \n".format(i,directories[j+1]),j)
-            #check if previous CV is nor overlaping 
-            if(resolution[-2]>0.85):
-                tochangeCV=directories[resolution.index(resolution[-1])]
-                try:
-                    path = Path("{}/{}US.sh".format(i,i))
-                    text = path.read_text()
-                    text = text.replace("K  "+str(Ks_data[:,0][j]), "K  "+str(Ks_data[:,0][j]*0.5))
-                    text = text.replace("!   RESTART_FILE_NAME toedit_byresolution", "   RESTART_FILE_NAME {}-RESTART.wfn".format(i))
-                    text = text.replace("PROJECT  {}".format(i),"PROJECT  {}_2k".format(i))
-                    path.write_text(text)
-                    with open ('Report_Analysis_US.txt',"a+") as report:
-                         report.write("changin K of "+str(Ks_data[:,0][j])+" by "+str(Ks_data[:,0][j]*0.5)+"in {} \n".format(tochangeCV))
-                except:
-                    print("nofile")
+            report.write("checking values for CVs {} and {} \n".format(i,directories[j+1]))
+        print("checking values for CVs {} and {} \n".format(i,directories[j+1]),j)
+        #check if previous CV is nor overlaping 
+        if(resolution[-2]>0.85):
+            tochangeCV=directories[resolution.index(resolution[-1])]
+            try:
+                path = Path("{}/{}US.sh".format(i,i))
+                text = path.read_text()
+                text = text.replace("K  "+str(Ks_data[:,0][j]), "K  "+str(Ks_data[:,0][j]*0.5))
+                text = text.replace("!   RESTART_FILE_NAME toedit_byresolution", "   RESTART_FILE_NAME {}-RESTART.wfn".format(i))
+                text = text.replace("PROJECT  {}".format(i),"PROJECT  {}_2k".format(i))
+                path.write_text(text)
+                with open ('Report_Analysis_US.txt',"a+") as report:
+                        report.write("changin K of "+str(Ks_data[:,0][j])+" by "+str(Ks_data[:,0][j]*0.5)+"in {} \n".format(tochangeCV))
+            except:
+                print("nofile")
 
 ##################plots generation 
 # %%
