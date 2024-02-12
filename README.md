@@ -11,6 +11,6 @@ TODO:
 - Allow re center Ts manually.
 - Allow select specfic number of windows. 
 
-Contact info : dr.figueroa10@uniandes.edu.co
+Contact info : david.refibla@gmail.com
 
 
